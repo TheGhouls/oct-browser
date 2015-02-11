@@ -1,5 +1,3 @@
-A web scrapper based on lxml library.
-
 Usefull methods for simple web parsing :
 
 * Using requests for open url and accessing page
@@ -16,5 +14,5 @@ Github repository : `https://github.com/karec/oct-browser`_
 
 Documentation : `http://octbrowser.readthedocs.org/en/latest/index.html`_
 
-.. _http://octbrowser.readthedocs.org/en/latest/index.html
+.. _http://octbrowser.readthedocs.org/en/latest/index.html: `http://octbrowser.readthedocs.org/en/latest/index.html`_
 
