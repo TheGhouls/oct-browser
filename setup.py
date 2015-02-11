@@ -21,7 +21,7 @@ setup(
     download_url='https://github.com/karec/oct-browser/archive/master.zip',
     keywords=['testing', 'mechanize', 'webscrapper', 'browser', 'web', 'lxml', 'html'],
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
@@ -35,14 +35,5 @@ setup(
         'cssselect',
         'tinycss',
         'six'
-    ],
-    entry_points={'console_scripts': [
-        'multimech-run = oct.multimechanize.utilities.run:main',
-        'multimech-newproject = oct.multimechanize.utilities.newproject:main',
-        'multimech-gridgui = oct.multimechanize.utilities.gridgui:main',
-        'oct-run = oct.utilities.run:main',
-        'oct-newproject = oct.utilities.newproject:main',
-        'octtools-sitemap-to-csv = oct.tools.xmltocsv:sitemap_to_csv',
-        'octtools-user-generator = oct.tools.email_generator:email_generator'
-    ]},
+    ]
 )
