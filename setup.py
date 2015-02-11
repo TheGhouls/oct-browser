@@ -10,12 +10,12 @@ with open('README.rst') as f:
     long_description = f.read()
 
 setup(
-    name='oct',
+    name='octbrowser',
     version=__version__,
     author='Emmanuel Valette',
     author_email='manu.valette@gmail.com',
     packages=['octbrowser'],
-    description="A library based on multi-mechanize for performances testing, using custom browser for writing tests",
+    description="A web scrapper based on lxml library.",
     long_description=long_description,
     url='https://github.com/karec/oct-browser',
     download_url='https://github.com/karec/oct-browser/archive/master.zip',
