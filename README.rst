@@ -14,5 +14,5 @@ Github repository : `https://github.com/karec/oct-browser`_
 
 Documentation : `http://octbrowser.readthedocs.org/en/latest/index.html`_
 
-.. _http://octbrowser.readthedocs.org/en/latest/index.html: `http://octbrowser.readthedocs.org/en/latest/index.html`_
+.. _http://octbrowser.readthedocs.org/en/latest/index.html: http://octbrowser.readthedocs.org/en/latest/index.html
 
