@@ -185,7 +185,7 @@ class Browser(object):
         :param values: the values of the form
         :return: Response object from requests.request method
         """
-        return self.session.request(method, url, None, values)
+        return self.session.request(method, url, None, values, self._headers)
 
     def open_url(self, url, data=None, back=False, **kwargs):
         """
