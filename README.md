@@ -1,5 +1,5 @@
 # oct-browser
-Script browser based on the oct browser module for simple and intuitive web scrapping
+Script browser based on the oct browser module for simple and intuitive web browsing using script
 
 [![doc](https://readthedocs.org/projects/octbrowser/badge/?version=latest)](http://oct.readthedocs.org/en/latest/)
 [![Latest Version](https://pypip.in/version/octbrowser/badge.svg?style=flat)](https://pypi.python.org/pypi/octbrowser/)

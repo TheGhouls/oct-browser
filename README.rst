@@ -1,4 +1,4 @@
-Usefull methods for simple web parsing :
+Usefull methods for simple web parsing and browsing within scripts :
 
 * Using requests for open url and accessing page
 * Simple history management
