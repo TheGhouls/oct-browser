@@ -7,6 +7,7 @@ from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound
 
 
 class Browser(object):
+
     """
     This class represent a minimal browser. Build on top of lxml awesome library it let you write script for accessing
     or testing website with python scripts
@@ -14,6 +15,7 @@ class Browser(object):
     :param session: The session object to use. If set to None will use requests.Session
     :param base_url: The base url for the website, will append it for every link without a full url
     """
+
     def __init__(self, session=None, base_url=''):
         self._sess_bak = session
         self._history = []
@@ -21,10 +23,10 @@ class Browser(object):
         self._url = None
         self._back_index = False
         self._base_url = base_url
-        self._headers = {}
         self.form = None
         self.form_data = None
         self.session = session or requests.Session()
+        self._headers = self.session.headers
 
     def add_header(self, name, value):
         """
@@ -48,7 +50,10 @@ class Browser(object):
         :type key: mixed
         :return: None
         """
-        self._headers.pop(key, None)
+        try:
+            self._headers.pop(key, None)
+        except KeyError:
+            pass
 
     def set_headers(self, headers):
         """
@@ -58,7 +63,8 @@ class Browser(object):
         :type headers: dict
         :return: None
         """
-        self._headers = headers
+        self._headers.clear()
+        self._headers.update(headers)
 
     def clean_session(self):
         """
@@ -199,10 +205,10 @@ class Browser(object):
         if not back:
             self._history.append(self._url)
         if data:
-            response = self.session.post(url, data, headers=self._headers, **kwargs)
+            response = self.session.post(url, data, **kwargs)
             self._url = url
         else:
-            response = self.session.get(url, headers=self._headers, **kwargs)
+            response = self.session.get(url, **kwargs)
             self._url = url
         response = self._parse_html(response)
         response.connection.close()
