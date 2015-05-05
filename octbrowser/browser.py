@@ -23,10 +23,10 @@ class Browser(object):
         self._url = None
         self._back_index = False
         self._base_url = base_url
-        self._headers = {}
         self.form = None
         self.form_data = None
         self.session = session or requests.Session()
+        self.headers = self.session.headers
 
     def add_header(self, name, value):
         """
@@ -40,7 +40,7 @@ class Browser(object):
         :type value: str
         :return: None
         """
-        self._headers[name] = value
+        self.headers[name] = value
 
     def del_header(self, key):
         """
@@ -50,7 +50,10 @@ class Browser(object):
         :type key: mixed
         :return: None
         """
-        self._headers.pop(key, None)
+        try:
+            self.headers.pop(key, None)
+        except KeyError:
+            pass
 
     def set_headers(self, headers):
         """
@@ -60,7 +63,8 @@ class Browser(object):
         :type headers: dict
         :return: None
         """
-        self._headers = headers
+        self.headers.clear()
+        self.headers.update(headers)
 
     def clean_session(self):
         """
@@ -187,7 +191,7 @@ class Browser(object):
         :param values: the values of the form
         :return: Response object from requests.request method
         """
-        return self.session.request(method, url, None, values, self._headers)
+        return self.session.request(method, url, None, values)
 
     def open_url(self, url, data=None, back=False, **kwargs):
         """
@@ -201,10 +205,10 @@ class Browser(object):
         if not back:
             self._history.append(self._url)
         if data:
-            response = self.session.post(url, data, headers=self._headers, **kwargs)
+            response = self.session.post(url, data, **kwargs)
             self._url = url
         else:
-            response = self.session.get(url, headers=self._headers, **kwargs)
+            response = self.session.get(url, **kwargs)
             self._url = url
         response = self._parse_html(response)
         response.connection.close()
