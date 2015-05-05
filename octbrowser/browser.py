@@ -26,7 +26,6 @@ class Browser(object):
         self.form = None
         self.form_data = None
         self.session = session or requests.Session()
-        self._headers = self.session.headers
 
     def add_header(self, name, value):
         """
@@ -40,7 +39,7 @@ class Browser(object):
         :type value: str
         :return: None
         """
-        self._headers[name] = value
+        self.session.headers[name] = value
 
     def del_header(self, key):
         """
@@ -51,7 +50,7 @@ class Browser(object):
         :return: None
         """
         try:
-            self._headers.pop(key, None)
+            self.session.headers.pop(key, None)
         except KeyError:
             pass
 
@@ -63,8 +62,8 @@ class Browser(object):
         :type headers: dict
         :return: None
         """
-        self._headers.clear()
-        self._headers.update(headers)
+        self.session.headers.clear()
+        self.session.update(headers)
 
     def clean_session(self):
         """

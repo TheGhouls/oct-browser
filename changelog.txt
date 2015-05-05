@@ -5,3 +5,13 @@
 * The ``submit_form`` method now send correcty the headers (thanks to Mark Owen)
 * Now using SocketServer for unit testing (thanks to Mark Owen)
 * Global unit tests improvements (thanks to Mark Owen)
+
+0.4.2 to 0.4.3
+==============
+
+* Remove ``_headers`` property to browser object, the headers manipulation functions now impact directly the
+``Browser.session.headers`` dict
+
+Backward compatibility breaks :
+
+* the private property ``_headers`` no longer exists
