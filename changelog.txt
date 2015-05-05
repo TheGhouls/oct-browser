@@ -11,6 +11,7 @@
 
 * Remove ``_headers`` property to browser object, the headers manipulation functions now impact directly the
 ``Browser.session.headers`` dict
+* Since ``headers`` keyword argument isn't called anymore, you can add specific headers for a single request
 
 Backward compatibility breaks :
 
