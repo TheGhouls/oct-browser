@@ -30,8 +30,8 @@ Or using setuptools :
 Changelogs
 ----------
 
-0.4 to 0.4.1
-============
+0.4.1 to 0.4.2
+==============
 
 * Headers manipulation methods now update the session headers and make it avaible for all requests (thanks to Mark Owen)
 * The ``submit_form`` method now send correcty the headers (thanks to Mark Owen)
