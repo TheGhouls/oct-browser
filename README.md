@@ -26,3 +26,14 @@ You can install OCTBrowser with pip :
 Or using setuptools :
 
 `python setup.py install`
+
+Changelogs
+----------
+
+0.4 to 0.4.1
+============
+
+* Headers manipulation methods now update the session headers and make it avaible for all requests (thanks to Mark Owen)
+* The ``submit_form`` method now send correcty the headers (thanks to Mark Owen)
+* Now using SocketServer for unit testing (thanks to Mark Owen)
+* Global unit tests improvements (thanks to Mark Owen)
