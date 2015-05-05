@@ -7,6 +7,7 @@ from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound
 
 
 class Browser(object):
+
     """
     This class represent a minimal browser. Build on top of lxml awesome library it let you write script for accessing
     or testing website with python scripts
@@ -14,6 +15,7 @@ class Browser(object):
     :param session: The session object to use. If set to None will use requests.Session
     :param base_url: The base url for the website, will append it for every link without a full url
     """
+
     def __init__(self, session=None, base_url=''):
         self._sess_bak = session
         self._history = []

@@ -1,10 +1,14 @@
 import unittest
-import lxml.html as lh
 from octbrowser import __version__ as ob_version
 from octbrowser.browser import Browser
 
 import threading
-import SocketServer
+try:
+    # Python 2
+    import SocketServer as socketserver
+except ImportError:
+    # Python 3
+    import socketserver
 try:
     # Python 2
     from SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -15,15 +19,17 @@ except ImportError:
 PORT = 8081
 BASE_URL = "http://localhost:{}".format(PORT)
 
+
 def start_http_server():
     """
     Run SimpleHTTPServer to serve files in test directory
     """
-    httpd = SocketServer.TCPServer(("", PORT), SimpleHTTPRequestHandler)
+    httpd = socketserver.TCPServer(("", PORT), SimpleHTTPRequestHandler)
     t = threading.Thread(target=httpd.serve_forever)
     t.setDaemon(True)
     t.start()
     return httpd
+
 
 class TestBrowserFunctions(unittest.TestCase):
 
