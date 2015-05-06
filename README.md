@@ -1,7 +1,7 @@
 # oct-browser
 Script browser based on the oct browser module for simple and intuitive web browsing using script
 
-[![doc](https://readthedocs.org/projects/octbrowser/badge/?version=latest)](http://oct.readthedocs.org/en/latest/)
+[![doc](https://readthedocs.org/projects/octbrowser/badge/?version=latest)](http://octbrowser.readthedocs.org/en/latest/)
 [![Supported Python versions](https://img.shields.io/badge/python-2.7--3.4-blue.svg)](https://pypi.python.org/pypi/octbrowser/)
 [![pypi](https://img.shields.io/pypi/v/octbrowser.svg?style=flat)](https://pypi.python.org/pypi/octbrowser/)
 
