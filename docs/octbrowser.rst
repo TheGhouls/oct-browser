@@ -197,3 +197,12 @@ octbrowser.exceptions module
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+octbrowser.history module
+-------------------------
+
+.. automodule:: octbrowser.history
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,3 +1,8 @@
+"""This file contain the main class for the octbrowser
+
+It represent a simple browser object with all methods
+"""
+
 import requests
 import re
 import os

@@ -38,3 +38,21 @@ class NoFormWaiting(Exception):
 
     """
     pass
+
+
+class EndOfHistory(Exception):
+    """Raised if the ``next`` method of an history is called but the actual page is the last element
+    """
+    pass
+
+
+class NoPreviousPage(Exception):
+    """Raised if the ``previous`` method of an history is called but the actual page is the first element
+    """
+    pass
+
+
+class HistoryIsEmpty(Exception):
+    """Raised if the ``get_current_item`` method of an history is called but the history is empty
+    """
+    pass
