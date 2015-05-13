@@ -67,26 +67,34 @@ class TestBrowserFunctions(unittest.TestCase):
     def test_navigation(self):
         """Testing history
         """
-        self.browser.open_url('http://google.com')
+        self.browser.open_url(BASE_URL + '/html_test.html')
 
-        self.assertListEqual(self.browser.history, [None])
+        self.assertListEqual(self.browser.history, [BASE_URL + '/html_test.html'])
 
-        resp = self.browser.open_url('http://google.com')
+        resp = self.browser.open_url(BASE_URL + '/basic_page.html')
 
         self.assertEqual(200, resp.status_code)
 
-        self.assertListEqual(self.browser.history, [None, 'http://google.com'])
+        self.assertListEqual(self.browser.history, [BASE_URL + '/html_test.html', BASE_URL + '/basic_page.html'])
 
         # main browser test
-        self.assertEqual(self.browser._url, 'http://google.com')
+        self.assertEqual(self.browser._url, BASE_URL + '/basic_page.html')
 
         # back
         self.browser.back()
 
         # Same previous url
-        self.assertEqual(self.browser._url, 'http://google.com')
+        self.assertEqual(self.browser._url, BASE_URL + '/html_test.html')
 
-        self.assertListEqual(self.browser.history, [None])
+        self.assertListEqual(self.browser.history, [BASE_URL + '/html_test.html', BASE_URL + '/basic_page.html'])
+
+        self.browser.next()
+
+        self.assertEqual(self.browser._url, BASE_URL + '/basic_page.html')
+
+        self.browser.clear_history()
+
+        self.assertEqual(self.browser.history, [])
 
         self.browser.clean_session()
 

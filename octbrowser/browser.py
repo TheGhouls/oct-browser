@@ -9,12 +9,12 @@ import os
 import lxml.html as lh
 from lxml.cssselect import CSSSelector
 from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound, NoFormWaiting
+from octbrowser.history import History
 
 
 class Browser(object):
 
-    """
-    This class represent a minimal browser. Build on top of lxml awesome library it let you write script for accessing
+    """This class represent a minimal browser. Build on top of lxml awesome library it let you write script for accessing
     or testing website with python scripts
 
     :param session: The session object to use. If set to None will use requests.Session
@@ -23,7 +23,7 @@ class Browser(object):
 
     def __init__(self, session=None, base_url=''):
         self._sess_bak = session
-        self._history = []
+        self._history = History()
         self._html = None
         self._url = None
         self._back_index = False
@@ -33,8 +33,7 @@ class Browser(object):
         self.session = session or requests.Session()
 
     def add_header(self, name, value):
-        """
-        Allow you to add custom header, one by one.
+        """Allow you to add custom header, one by one.
         Specify existing name for update
         Headers will be used by every request
 
@@ -47,8 +46,7 @@ class Browser(object):
         self.session.headers[name] = value
 
     def del_header(self, key):
-        """
-        Try to delete the 'key' of headers property
+        """Try to delete the 'key' of headers property
 
         :param key: the key to delete
         :type key: mixed
@@ -60,8 +58,7 @@ class Browser(object):
             pass
 
     def set_headers(self, headers):
-        """
-        Setter for headers property
+        """Setter for headers property
 
         :param headers: a dict containing all headers
         :type headers: dict
@@ -71,8 +68,7 @@ class Browser(object):
         self.session.update(headers)
 
     def clean_session(self):
-        """
-        This function is called by the core of multi-mechanize. It cleans the session for avoiding cache or cookies
+        """This function is called by the core of multi-mechanize. It cleans the session for avoiding cache or cookies
         errors, or giving false results based on cache
 
         :return: None
@@ -82,8 +78,7 @@ class Browser(object):
 
     @property
     def _form_waiting(self):
-        """
-        Check if a form is actually on hold or not
+        """Check if a form is actually on hold or not
 
         :return: True or False
         """
@@ -92,8 +87,7 @@ class Browser(object):
         return False
 
     def _parse_html(self, response):
-        """
-        Parse the response object and set the html property to response and to itself
+        """Parse the response object and set the html property to response and to itself
 
         Html property is a lxml.Html object, needed for parsing the content, getting elements like form, etc...
         If you want the raw html, you can use both::
@@ -120,8 +114,7 @@ class Browser(object):
         return response
 
     def get_form(self, selector=None, nr=0, at_base=False):
-        """
-        Get the form selected by the selector and / or the nr param
+        """Get the form selected by the selector and / or the nr param
 
         Raise:
             * oct.core.exceptions.FormNotFoundException
@@ -155,8 +148,7 @@ class Browser(object):
             self.form.action = self._url
 
     def get_select_values(self):
-        """
-        Get the available values of all select and select multiple fields in form
+        """Get the available values of all select and select multiple fields in form
 
         :return: a dict containing all values for each fields
         """
@@ -167,8 +159,7 @@ class Browser(object):
         return data
 
     def submit_form(self):
-        """
-        Submit the form filled with form_data property dict
+        """Submit the form filled with form_data property dict
 
         Raise:
             oct.core.exceptions.NoFormWaiting
@@ -179,7 +170,7 @@ class Browser(object):
             raise NoFormWaiting('No form waiting to be send')
 
         self.form.fields = self.form_data
-        self._history.append(self.form.action)
+        self._history.append_item(self.form.action)
         r = lh.submit_form(self.form, open_http=self._open_session_http)
         resp = self._parse_html(r)
         self.form_data = None
@@ -187,8 +178,7 @@ class Browser(object):
         return resp
 
     def _open_session_http(self, method, url, values):
-        """
-        Custom method for form submission, send to lxml submit form method
+        """Custom method for form submission, send to lxml submit form method
 
         :param method: the method of the form (POST, GET, PUT, DELETE)
         :param url: the url of the action of the form
@@ -198,8 +188,7 @@ class Browser(object):
         return self.session.request(method, url, None, values)
 
     def open_url(self, url, data=None, back=False, **kwargs):
-        """
-        Open the given url
+        """Open the given url
 
         :param url: The url to access
         :param data: Data to send. If data is set, the browser will make a POST request
@@ -207,7 +196,7 @@ class Browser(object):
         :return: The Response object from requests call
         """
         if not back:
-            self._history.append(self._url)
+            self._history.append_item(url)
         if data:
             response = self.session.post(url, data, **kwargs)
             self._url = url
@@ -219,31 +208,48 @@ class Browser(object):
         return response
 
     def back(self):
-        """
-        Go to the previous url in the history property
+        """Go to the previous url in the history
 
         :return: the Response object
+        :raises: NoPreviousPage
         """
-        try:
-            resp = self.open_url(self._history[-1], back=True)
-            del self._history[-1]
-            return resp
-        except IndexError:
-            raise Exception("No history, cannot go back")
+        resp = self.open_url(self._history.previous(), back=True)
+        return resp
+
+    def next(self):
+        """Go to the next url in the history
+
+        :return: the Response object
+        :raises: EndOfHistory
+        """
+        resp = self.open_url(self._history.next(), back=True)
+        return resp
+
+    def clear_history(self):
+        """Re initialise the history
+        """
+        self._history.clear_history()
 
     @property
     def history(self):
+        """Return the actual history list
+
+        :return: the history list
+        :rtype: list
         """
-        Return the actual history
+        return self._history.history
+
+    @property
+    def history_object(self):
+        """Return the actual history object
 
         :return: the _history property
-        :rtype: list
+        :rtype: History
         """
         return self._history
 
     def follow_link(self, selector, url_regex=None):
-        """
-        Will access the first link found with the selector
+        """Will access the first link found with the selector
 
         Raise:
             oct.core.exceptions.LinkNotFound
@@ -272,8 +278,7 @@ class Browser(object):
             raise LinkNotFound('Link not found')
 
     def get_html_element(self, selector):
-        """
-        Return a html element as string. The element will be find using the `selector` param
+        """Return a html element as string. The element will be find using the `selector` param
 
         Use this method for get single html elements, if you want to get a list of elements,
         please use `get_html_elements`
@@ -290,8 +295,7 @@ class Browser(object):
         return ret
 
     def get_html_elements(self, selector):
-        """
-        Return a list of lxml.html.HtmlElement matching the `selector` argument
+        """Return a list of lxml.html.HtmlElement matching the `selector` argument
 
         :param selector: a string representing a css selector
         :type selector: str
@@ -301,8 +305,7 @@ class Browser(object):
         return self._html.cssselect(selector)
 
     def get_ressource(self, selector, output_dir, source_attribute='src'):
-        """
-        Get a specified ressource and write it to the output dir
+        """Get a specified ressource and write it to the output dir
 
         Raise:
             OSError
@@ -343,8 +346,7 @@ class Browser(object):
 
     @staticmethod
     def open_in_browser(response):
-        """
-        Provide a simple interface for `lxml.html.open_in_browser` function.
+        """Provide a simple interface for `lxml.html.open_in_browser` function.
         Be careful, use this function only for debug purpose
 
         :param response:

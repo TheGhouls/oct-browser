@@ -170,14 +170,34 @@ You can follow links inside the html page like this :
     # oooops wrong link ! (yeah i know, that's doesn't append in script by try to imagine)
     # let's go back
     response = br.back() # after this we will be again at the index page
+    # wait no ! go forward ! it was good
+    response = br.next() # and here we go
+    # go back again !
+    response = br.back()
+    # access another page now
+    response = br.open_url('index')
+    # going forward ?
+    br.next() # This will raise an EndOfHistory Exception
+
 
 And that's it ! The `follow_link` method is pretty simple actually, it just finds a link by regex and / or css selector,
 and then opens the url contained in the `href` attribute of this link.
 
-What about the navigation history ? Well it's not a big deal, only a small history management, no next management for now. But it allow you to
-go back and see all pages opened previously. What appends actually when you go back ? It open the previous url in the history list
-property, and then delete the next page of it. So yeah, i know, pretty bad. But stay tuned, better history
-management is coming !
+What about the navigation history ?
+Well at this point the navigation history is managed by an object, who keep traces of all visited url. The history object
+tries to fit the beaviour of a standard browser and gave you those methods :
+
+* ``back`` for going back in the history
+* ``next`` for going the the next element
+* ``clear_history`` for removing all urls of the history
+
+.. note:: If you use the ``back`` method, and then open an other url, the ``next`` method won't be avaible anymore, since
+once you open an url, there a no next address yet.
+
+Those methods allow you to navigate more easily with the octbrowser.
+But if you want to use all the methods / properties of the History object, you can use the ``history_object`` property
+of the browser to retreive it.
+See the history documentation below to see all methods avaibles for the history object
 
 Module details
 --------------

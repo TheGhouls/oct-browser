@@ -69,3 +69,10 @@ class History(object):
             return self.history[self.current]
         except IndexError:
             raise HistoryIsEmpty()
+
+    def clear_history(self):
+        """Delete the current history and re initialise all values
+        """
+        del self.history
+        self.history = list()
+        self.current = 0
