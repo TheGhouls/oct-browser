@@ -173,6 +173,7 @@ class Browser(object):
         self._history.append_item(self.form.action)
         r = lh.submit_form(self.form, open_http=self._open_session_http)
         resp = self._parse_html(r)
+        self._url = resp.url
         self.form_data = None
         self.form = None
         return resp
