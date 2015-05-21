@@ -171,7 +171,8 @@ class Browser(object):
         self.form.fields = self.form_data
         r = lh.submit_form(self.form, open_http=self._open_session_http)
         resp = self._parse_html(r)
-        self._history.append_item(resp)
+        if self._history is not None:
+            self._history.append_item(resp)
         self._url = resp.url
         self.form_data = None
         self.form = None
@@ -202,7 +203,8 @@ class Browser(object):
             response = self.session.get(url, **kwargs)
             self._url = url
         response = self._parse_html(response)
-        self._history.append_item(response)
+        if self._history is not None:
+            self._history.append_item(response)
         response.connection.close()
         return response
 
