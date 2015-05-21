@@ -56,3 +56,9 @@ class HistoryIsEmpty(Exception):
     """Raised if the ``get_current_item`` method of an history is called but the history is empty
     """
     pass
+
+
+class HistoryIsNone(Exception):
+    """Raised if the ``_history`` property of the browser is set to None and one method using it is called
+    """
+    pass

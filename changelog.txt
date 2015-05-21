@@ -12,11 +12,13 @@
 * Remove ``_headers`` property to browser object, the headers manipulation functions now impact directly the
 ``Browser.session.headers`` dict
 * Since ``headers`` keyword argument isn't called anymore, you can add specific headers for a single request
-* Add a better history support. The history is now an object and has a previous and a next function, see the docs for
+* Add a better history support. The history is now an object and has a previous and a forward methods, see the docs for
 all informations
+* User can define history object base on the `BaseHistory` class
 * Improve tests for new history
-* Updated docuementation for history
+* Updated documentation for history
 
 Backward compatibility breaks :
 
 * the private property ``_headers`` no longer exists
+* the ``back`` parameter for the ``open_url`` method has been removed

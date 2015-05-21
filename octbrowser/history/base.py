@@ -3,67 +3,51 @@
 All history management are present here
 """
 
-from octbrowser.exceptions import EndOfHistory, NoPreviousPage, HistoryIsEmpty
+from octbrowser.exceptions import HistoryIsEmpty
 
 
-class History(object):
-    """Represent a basic browser history, it consist on a simple list and a property to keep the current
-    element
+class BaseHistory(object):
+    """Represent a base browser historic
     """
 
     def __init__(self):
         self.current = 0
-        self.history = list()
+        self.history = []
 
     def append_item(self, item):
         """Add a new item to the history
 
         :param item: the item to add in the history list
-        :type item: str
+        :type item: requests.Response
         :return: None
         """
-        if self.current < (len(self.history) - 1):
-            self.history = self.history[:self.current + 1]
-        self.history.append(item)
-        self.current = len(self.history) - 1
+        raise NotImplemented("Append item must be implemented")
 
-    def next(self):
+    def forward(self):
         """Return the next element in comparision with the current element
         If the history doesn't have a next element, the method will raise an ``EndOfHistory`` exception
 
         :return: the next element
-        :rtype: str
+        :rtype: requests.Response
         :raises: EndOfHistory
         """
-        try:
-            item = self.history[self.current + 1]
-            self.current += 1
-        except IndexError:
-            raise EndOfHistory()
-        return item
+        raise NotImplemented("Forward method must be implemented")
 
-    def previous(self):
+    def back(self):
         """Return the previous element in comparision with the current element
-        If the history doesn't have a previous element, the method will raise an ``NoPreviousPage`` exception
+        If the history doesn't have a previous element, the method must raise an ``NoPreviousPage`` exception
 
         :return: the previous element
-        :rtype: str
+        :rtype: requests.Response
         :raises: NoPreviousPage
         """
-        if self.current == 0:
-            raise NoPreviousPage()
-        try:
-            item = self.history[self.current - 1]
-            self.current -= 1
-        except IndexError:
-            raise NoPreviousPage()
-        return item
+        raise NotImplemented("Back method must be implemented")
 
     def get_current_item(self):
         """Simply return the current item
 
         :return: the current item
-        :rtype: str
+        :rtype: requests.Response
         """
         try:
             return self.history[self.current]
@@ -74,5 +58,5 @@ class History(object):
         """Delete the current history and re initialise all values
         """
         del self.history
-        self.history = list()
+        self.history = []
         self.current = 0

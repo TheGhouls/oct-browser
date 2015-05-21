@@ -8,8 +8,7 @@ import re
 import os
 import lxml.html as lh
 from lxml.cssselect import CSSSelector
-from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound, NoFormWaiting
-from octbrowser.history import History
+from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound, NoFormWaiting, HistoryIsNone
 
 
 class Browser(object):
@@ -21,9 +20,9 @@ class Browser(object):
     :param base_url: The base url for the website, will append it for every link without a full url
     """
 
-    def __init__(self, session=None, base_url=''):
+    def __init__(self, session=None, base_url='', history=None):
         self._sess_bak = session
-        self._history = History()
+        self._history = history
         self._html = None
         self._url = None
         self._back_index = False
@@ -170,9 +169,9 @@ class Browser(object):
             raise NoFormWaiting('No form waiting to be send')
 
         self.form.fields = self.form_data
-        self._history.append_item(self.form.action)
         r = lh.submit_form(self.form, open_http=self._open_session_http)
         resp = self._parse_html(r)
+        self._history.append_item(resp)
         self._url = resp.url
         self.form_data = None
         self.form = None
@@ -188,7 +187,7 @@ class Browser(object):
         """
         return self.session.request(method, url, None, values)
 
-    def open_url(self, url, data=None, back=False, **kwargs):
+    def open_url(self, url, data=None, **kwargs):
         """Open the given url
 
         :param url: The url to access
@@ -196,8 +195,6 @@ class Browser(object):
         :param back: tell if we actually accessing a page of the history
         :return: The Response object from requests call
         """
-        if not back:
-            self._history.append_item(url)
         if data:
             response = self.session.post(url, data, **kwargs)
             self._url = url
@@ -205,6 +202,7 @@ class Browser(object):
             response = self.session.get(url, **kwargs)
             self._url = url
         response = self._parse_html(response)
+        self._history.append_item(response)
         response.connection.close()
         return response
 
@@ -212,23 +210,35 @@ class Browser(object):
         """Go to the previous url in the history
 
         :return: the Response object
+        :rtype: requests.Response
         :raises: NoPreviousPage
         """
-        resp = self.open_url(self._history.previous(), back=True)
-        return resp
+        if self._history is None:
+            raise HistoryIsNone("You must set history if you need to use historic methods")
+        response = self._history.back()
+        parsed_response = self._parse_html(response)
+        self._url = parsed_response.url
+        return parsed_response
 
-    def next(self):
+    def forward(self):
         """Go to the next url in the history
 
         :return: the Response object
+        :rtype: requests.Response
         :raises: EndOfHistory
         """
-        resp = self.open_url(self._history.next(), back=True)
-        return resp
+        if self._history is None:
+            raise HistoryIsNone("You must set history if you need to use historic methods")
+        response = self._history.forward()
+        parsed_response = self._parse_html(response)
+        self._url = parsed_response.url
+        return parsed_response
 
     def clear_history(self):
         """Re initialise the history
         """
+        if self._history is None:
+            raise HistoryIsNone("You must set history if you need to use historic methods")
         self._history.clear_history()
 
     @property
@@ -238,6 +248,8 @@ class Browser(object):
         :return: the history list
         :rtype: list
         """
+        if self._history is None:
+            raise HistoryIsNone("You must set history if you need to use historic methods")
         return self._history.history
 
     @property
