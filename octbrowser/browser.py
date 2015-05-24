@@ -9,6 +9,7 @@ import os
 import lxml.html as lh
 from lxml.cssselect import CSSSelector
 from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound, NoFormWaiting, HistoryIsNone
+from octbrowser.history.base import BaseHistory
 
 
 class Browser(object):
@@ -18,10 +19,14 @@ class Browser(object):
 
     :param session: The session object to use. If set to None will use requests.Session
     :param base_url: The base url for the website, will append it for every link without a full url
+    :param history: The history object to use. If set to None no history will be stored.
+    :type history: octbrowser.history.base.BaseHistory instance
     """
 
     def __init__(self, session=None, base_url='', history=None):
         self._sess_bak = session
+        if history is not None:
+            assert isinstance(history, BaseHistory)
         self._history = history
         self._html = None
         self._url = None
@@ -193,15 +198,14 @@ class Browser(object):
 
         :param url: The url to access
         :param data: Data to send. If data is set, the browser will make a POST request
-        :param back: tell if we actually accessing a page of the history
         :return: The Response object from requests call
         """
         if data:
             response = self.session.post(url, data, **kwargs)
-            self._url = url
+            self._url = response.url
         else:
             response = self.session.get(url, **kwargs)
-            self._url = url
+            self._url = response.url
         response = self._parse_html(response)
         if self._history is not None:
             self._history.append_item(response)
