@@ -1,7 +1,10 @@
 import unittest
 from octbrowser import __version__ as ob_version
 from octbrowser.browser import Browser
+from octbrowser.history.cached import CachedHistory
+from octbrowser.exceptions import EndOfHistory, NoPreviousPage
 
+from collections import deque
 import threading
 try:
     # Python 2
@@ -24,6 +27,7 @@ def start_http_server():
     """
     Run SimpleHTTPServer to serve files in test directory
     """
+    socketserver.TCPServer.allow_reuse_address = True
     httpd = socketserver.TCPServer(("", PORT), SimpleHTTPRequestHandler)
     t = threading.Thread(target=httpd.serve_forever)
     t.setDaemon(True)
@@ -64,40 +68,6 @@ class TestBrowserFunctions(unittest.TestCase):
                         'User-Agent is in post headers')
         self.assertEqual(r.request.headers['User-Agent'], user_agent)
 
-    def test_navigation(self):
-        """Testing history
-        """
-        self.browser.open_url(BASE_URL + '/html_test.html')
-
-        self.assertListEqual(self.browser.history, [BASE_URL + '/html_test.html'])
-
-        resp = self.browser.open_url(BASE_URL + '/basic_page.html')
-
-        self.assertEqual(200, resp.status_code)
-
-        self.assertListEqual(self.browser.history, [BASE_URL + '/html_test.html', BASE_URL + '/basic_page.html'])
-
-        # main browser test
-        self.assertEqual(self.browser._url, BASE_URL + '/basic_page.html')
-
-        # back
-        self.browser.back()
-
-        # Same previous url
-        self.assertEqual(self.browser._url, BASE_URL + '/html_test.html')
-
-        self.assertListEqual(self.browser.history, [BASE_URL + '/html_test.html', BASE_URL + '/basic_page.html'])
-
-        self.browser.next()
-
-        self.assertEqual(self.browser._url, BASE_URL + '/basic_page.html')
-
-        self.browser.clear_history()
-
-        self.assertEqual(self.browser.history, [])
-
-        self.browser.clean_session()
-
     def test_get_elements(self):
         """Testing the get_html_elements method
         """
@@ -113,9 +83,66 @@ class TestBrowserFunctions(unittest.TestCase):
 
         self.assertTrue(len(tags) == 4)
 
+    def tearDown(self):
+        self.browser.session.close()
+
+
+class TestCachedHistoryFunctions(unittest.TestCase):
+
+    def setUp(self):
+        self.maxlen = 4
+        self.browser = Browser(base_url=BASE_URL,
+                               history=CachedHistory(maxlen=self.maxlen))
+
+    def test_cached_history(self):
+        """Testing the browser cached history
+        """
+        resp0 = self.browser.open_url(BASE_URL + '/html_test.html')
+        self.assertTrue(len(self.browser._history.history) == 1)
+        self.assertEqual(resp0, self.browser._history.get_current_item())
+        self.assertRaises(NoPreviousPage, self.browser.back)
+        self.assertRaises(EndOfHistory, self.browser.forward)
+        resp1 = self.browser.open_url(BASE_URL + '/basic_page.html')
+        resp2 = self.browser.open_url(BASE_URL + '/basic_page2.html')
+        self.assertEqual(deque([resp0, resp1, resp2]),
+                         self.browser._history.history)
+
+        # Back
+        resp1_hist = self.browser.back()
+        # Same as previous url
+        self.assertEqual(self.browser._url, resp1.url)
+        # Same response object
+        self.assertEqual(resp1_hist, resp1)
+
+        # Back again
+        resp0_hist = self.browser.back()
+        self.assertEqual(resp0_hist, resp0)
+
+        # Forward
+        resp1_hist = self.browser.forward()
+        self.assertEqual(resp1_hist, resp1)
+
+        # Forget some history
+        resp3 = self.browser.open_url(BASE_URL)
+        self.assertEqual(deque([resp0, resp1, resp3]),
+                         self.browser._history.history)
+
+        # Clear history
+        self.browser.clear_history()
+        self.assertTrue(isinstance(self.browser._history.history, deque))
+        self.assertTrue(len(self.browser._history.history) == 0)
+
+        # Check max history len
+        for i in xrange(self.maxlen + 2):
+            self.open_url(BASE_URL + '/html_test.html')
+        self.assertEqual(len(self.browser._history.history), self.maxlen)
+
+    def tearDown(self):
+        self.browser.session.close()
+
 if __name__ == '__main__':
     httpd = start_http_server()
     try:
         unittest.main()
     finally:
-        httpd.server_close()
+        httpd.shutdown()
