@@ -134,7 +134,7 @@ class TestCachedHistoryFunctions(unittest.TestCase):
 
         # Check max history len
         for i in xrange(self.maxlen + 2):
-            self.open_url(BASE_URL + '/html_test.html')
+            self.browser.open_url(BASE_URL + '/html_test.html')
         self.assertEqual(len(self.browser._history.history), self.maxlen)
 
     def tearDown(self):
