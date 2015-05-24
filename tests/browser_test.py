@@ -133,7 +133,7 @@ class TestCachedHistoryFunctions(unittest.TestCase):
         self.assertTrue(len(self.browser._history.history) == 0)
 
         # Check max history len
-        for i in xrange(self.maxlen + 2):
+        for i in range(self.maxlen + 2):
             self.browser.open_url(BASE_URL + '/html_test.html')
         self.assertEqual(len(self.browser._history.history), self.maxlen)
 

@@ -5,7 +5,7 @@ All history management are present here
 
 import requests
 from octbrowser.exceptions import EndOfHistory, NoPreviousPage
-from base import BaseHistory
+from octbrowser.history.base import BaseHistory
 from collections import deque
 
 
@@ -35,7 +35,7 @@ class CachedHistory(BaseHistory):
         assert isinstance(item, requests.Response)
         # Remove all items in front of the current item
         if self.current < (len(self.history) - 1):
-            for i in xrange(len(self.history) - 1 - self.current):
+            for i in range(len(self.history) - 1 - self.current):
                 self.history.pop()  # deque doesn't support slicing
         # Append the new item
         self.history.append(item)
