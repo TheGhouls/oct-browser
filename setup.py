@@ -14,7 +14,7 @@ setup(
     version=__version__,
     author='Emmanuel Valette',
     author_email='manu.valette@gmail.com',
-    packages=['octbrowser'],
+    packages=['octbrowser', 'octbrowser.history'],
     description="A web scrapper based on lxml library.",
     long_description=long_description,
     url='https://github.com/karec/oct-browser',
