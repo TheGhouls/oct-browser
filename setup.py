@@ -20,6 +20,7 @@ setup(
     url='https://github.com/karec/oct-browser',
     download_url='https://github.com/karec/oct-browser/archive/master.zip',
     keywords=['testing', 'mechanize', 'webscrapper', 'browser', 'web', 'lxml', 'html'],
+    test_suite='tests',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
