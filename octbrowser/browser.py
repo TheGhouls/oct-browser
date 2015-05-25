@@ -29,11 +29,25 @@ class Browser(object):
             assert isinstance(history, BaseHistory)
         self._history = history
         self._response = None
-        self._back_index = False
         self._base_url = base_url
         self.form = None
         self.form_data = None
         self.session = session or requests.Session()
+
+    def clean_browser(self):
+        """Clears browser history, session, current page, and form state
+
+        self._base_url is unmodified
+        :return: None
+        """
+        self.clean_session()
+        self._response = None
+        self.form = None
+        self.form_data = None
+        try:
+            self.clear_history()
+        except HistoryIsNone:
+            pass
 
     def add_header(self, name, value):
         """Allow you to add custom header, one by one.
@@ -55,10 +69,7 @@ class Browser(object):
         :type key: mixed
         :return: None
         """
-        try:
-            self.session.headers.pop(key, None)
-        except KeyError:
-            pass
+        self.session.headers.pop(key, None)
 
     def set_headers(self, headers):
         """Setter for headers property
@@ -68,7 +79,7 @@ class Browser(object):
         :return: None
         """
         self.session.headers.clear()
-        self.session.update(headers)
+        self.session.headers.update(headers)
 
     def clean_session(self):
         """This function is called by the core of multi-mechanize. It cleans the session for avoiding cache or cookies
@@ -176,7 +187,10 @@ class Browser(object):
         """Get the available values of all select and select multiple fields in form
 
         :return: a dict containing all values for each fields
+        :raises: NoFormWaiting
         """
+        if not self._form_waiting:
+            raise NoFormWaiting('No form waiting')
         data = {}
         for i in self.form.inputs:
             if isinstance(i, lh.SelectElement):
@@ -308,16 +322,15 @@ class Browser(object):
         resp = None
 
         if self._html is None:
-            raise Exception('No url open')
+            raise NoUrlOpen
 
         for e in sel(self._html):
             if url_regex:
                 r = re.compile(url_regex)
                 if r.match(e.get('href')) or r.match(e.xpath('string()')):
-                    resp = self.open_url(e.get('href'))
+                    return self.open_url(e.get('href'))
             else:
-                resp = self.open_url(e.get('href'))
-            return self._process_response(resp)
+                return self.open_url(e.get('href'))
 
         if resp is None:
             raise LinkNotFound('Link not found')
@@ -333,6 +346,8 @@ class Browser(object):
         :return: a string containing the element, if multiples elements are find, it will concat them
         :rtype: str
         """
+        if self._html is None:
+            raise NoUrlOpen()
         elements = self._html.cssselect(selector)
         ret = ""
         for elem in elements:
@@ -347,6 +362,8 @@ class Browser(object):
         :return: a list of lxml.html.HtmlElement of finded elements
         :rtype: list
         """
+        if self._html is None:
+            raise NoUrlOpen()
         return self._html.cssselect(selector)
 
     def get_ressource(self, selector, output_dir, source_attribute='src'):
@@ -363,6 +380,8 @@ class Browser(object):
         :type source_attribute: str
         :return: True if ressources as been correctly downled, False in other case
         """
+        if self._html is None:
+            raise NoUrlOpen()
         elements = self._html.cssselect(selector)
 
         if not elements or len(elements) == 0:
