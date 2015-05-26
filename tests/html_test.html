@@ -7,10 +7,22 @@
 <body>
 
     <div id="content">
-        <a href="/basic_page.html" id="test_link"></a>
+        <img id="python-logo" src="python-logo.png">
+        <img id="python-powered-logo" href="python-powered-w-70x28.png">
+        <img id="empty-resource" src="empty.png">
+        <img id="missing-resource" src="missing.png">
+        <a href="basic_page.html" id="test_link">Basic Page</a>
+        <a href="missing.html" id="bad_link">Missing Page</a>
 
-        <form action="/nothing.html" class="form">
+        <form action="/nothing.html" class="form" id="testform">
             <input type="text" name="test" value="OK"/>
+            <select name="ver">
+                <option value="py2">Python 2</option>
+                <option value="py3" selected>Python 3</option>
+            </select>
+        </form>
+
+        <form action="" class="form" id="testform2">
         </form>
     </div>
 

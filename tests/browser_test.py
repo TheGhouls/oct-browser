@@ -2,6 +2,7 @@ import os
 import unittest
 from collections import deque
 import threading
+import urllib
 try:
     # Python 2
     import SocketServer as socketserver
@@ -29,8 +30,7 @@ httpd = None
 
 
 def start_http_server():
-    """
-    Run SimpleHTTPServer to serve files in test directory
+    """ Run SimpleHTTPServer to serve files in test directory
     """
     global httpd
     socketserver.TCPServer.allow_reuse_address = True
@@ -41,6 +41,8 @@ def start_http_server():
 
 
 def stop_http_server():
+    """ Stop SimpleHTTPServer
+    """
     try:
         httpd.shutdown()
     except AttributeError:
@@ -48,13 +50,15 @@ def stop_http_server():
 
 
 def setUpModule():
-    # Start http server in tests directory
-    os.chdir(os.path.dirname(__file__))
+    """Start http server in tests directory
+    """
+    os.chdir(os.path.dirname(__file__) or '.')
     start_http_server()
 
 
 def tearDownModule():
-    # Shutdown http server
+    """Shutdown http server
+    """
     stop_http_server()
 
 
@@ -137,9 +141,13 @@ class TestBrowserFunctions(unittest.TestCase):
 
         # Browser.follow_link
         self.browser._base_url = BASE_URL
-        # Non-existent link
-        r = self.browser.open_url(BASE_URL + '/html_test.html')
+        # Non-existent anchor tag
+        self.browser.open_url(BASE_URL + '/html_test.html')
         self.assertRaises(LinkNotFound, self.browser.follow_link, '#nonsense')
+
+        # Valid anchor but missing page
+        r = self.browser.open_url(BASE_URL + '/html_test.html')
+        self.assertRaises(LinkNotFound, self.browser.follow_link, '#bad-link')
 
         # Good link
         self.browser.open_url(BASE_URL + '/html_test.html')
@@ -147,13 +155,20 @@ class TestBrowserFunctions(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.url, BASE_URL + '/basic_page.html')
 
-        # Good link + regex
-        r = self.browser.open_url(BASE_URL + '/html_test.html')
+        # Good link + regex on href
+        self.browser.open_url(BASE_URL + '/html_test.html')
         r = self.browser.follow_link('#test_link', url_regex='.*\.html')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.url, BASE_URL + '/basic_page.html')
 
+        # Good link + regex on anchor inner html
+        self.browser.open_url(BASE_URL + '/html_test.html')
+        r = self.browser.follow_link('#test_link', url_regex='.*Basic.*')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.url, BASE_URL + '/basic_page.html')
+
         # Good link + bad regex
+        r = self.browser.open_url(BASE_URL + '/html_test.html')
         self.assertRaises(
             LinkNotFound,
             self.browser.follow_link,
@@ -172,6 +187,7 @@ class TestBrowserFunctions(unittest.TestCase):
         # Do browser clean
         self.browser.clean_browser()
         # Verify results
+        self.assertEqual(self.browser._base_url, BASE_URL)
         self.assertIsNone(self.browser._url)
         self.assertIsNone(self.browser._html)
         self.assertIsNone(self.browser._response)
@@ -179,7 +195,9 @@ class TestBrowserFunctions(unittest.TestCase):
         if self.browser.history_object is not None:
             self.assertIsNone(self.browser.history)
 
-        # Browser._process_html
+        # Browser._process_response
+        # Handle requests responses
+        self.browser.clean_browser()
         self.assertIsNone(self.browser._url)
         self.assertIsNone(self.browser._html)
         self.assertIsNone(self.browser._response)
@@ -188,6 +206,23 @@ class TestBrowserFunctions(unittest.TestCase):
         self.assertEqual(r.url, self.browser._url)
         self.assertIsNotNone(self.browser._html)
         self.assertEqual(self.browser._response, r_html)
+
+        # Handle urllib responses
+        self.browser.clean_browser()
+        self.assertIsNone(self.browser._url)
+        self.assertIsNone(self.browser._html)
+        self.assertIsNone(self.browser._response)
+        r = urllib.urlopen(BASE_URL + '/html_test.html')
+        r_html = self.browser._process_response(r)
+        self.assertEqual(r.url, self.browser._url)
+        self.assertIsNotNone(self.browser._html)
+        self.assertEqual(self.browser._response, r_html)
+
+        # Browser.open_in_browser
+        # Make sure it can be called but don't actually open in a browser
+        r = requests.Response()
+        r.html = None
+        self.assertRaises(AssertionError, self.browser.open_in_browser, r)
 
     def test_form(self):
         """Test the form functions
@@ -204,25 +239,35 @@ class TestBrowserFunctions(unittest.TestCase):
         # Browser.get_form/._form_waiting
         self.browser.open_url(BASE_URL + "/html_test.html")
         self.assertRaises(FormNotFoundException, self.browser.get_form, '.zz')
-        self.browser.get_form('.form')  # test with class selector
+        # self.browser.get_form('.form')  # test with class selector
+        self.browser.get_form('#testform')
         self.assertTrue(self.browser._form_waiting)
+
         # check input
         self.assertEqual(self.browser.form.inputs['test'].name, 'test')
-        self.assertEqual(self.browser.form_data['test'], 'OK')
-
-        # test with advanced selector
-        self.browser.get_form('div#content > form')
         self.assertEqual(self.browser.form_data['test'], 'OK')
 
         # test with nr param
         self.browser.get_form(None, nr=0)
         self.assertEqual(self.browser.form_data['test'], 'OK')
 
-        # TODO Browser.get_select_values
-        # self.assertEqual(self.browser.get_select_values(), {'test': 'OK'})
+        # test with invalid selector
+        self.assertRaises(
+            FormNotFoundException,
+            self.browser.get_form('#invalid'))
+
+        # test empty form with empty action
+        self.browser.get_form('#testform2')
+        self.assertEqual(self.browser.form.action, self.browser._url)
+
+        # Browser.get_select_values
+        self.browser.get_form('#testform')
+        sel_data = {'ver': ['py2', 'py3']}
+        self.assertEqual(self.browser.get_select_values(), sel_data)
 
         # Browser.submit_form/_open_session_http
         # Check data and headers of submit_form
+        self.browser.get_form('#testform')  # test with class selector
         user_agent = 'python-octbrowser/{}'.format(ob_version)
         self.browser.add_header('User-Agent', user_agent)
         self.browser.form_data['test'] = 'octbrowser'
@@ -232,10 +277,10 @@ class TestBrowserFunctions(unittest.TestCase):
         # Verify user-agent and post data in response
         self.assertIn('User-Agent',  r.request.headers)
         self.assertEqual(r.request.headers['User-Agent'], user_agent)
-        self.assertEqual(r.request.body, 'test=octbrowser')
+        self.assertEqual(r.request.body, 'test=octbrowser&ver=py3')
 
     def test_get_elements(self):
-        """Testing the get_html_elements method
+        """Testing the get_html_element(s) methods
         """
         # Start Fresh
         self.browser.clean_browser()
@@ -260,7 +305,65 @@ class TestBrowserFunctions(unittest.TestCase):
         tags = self.browser.get_html_elements('.paraf')
         self.assertTrue(len(tags) == 4)
 
-        # TODO Browser.get_resource
+    def test_get_resource(self):
+        """Testing the get_resource method
+        """
+        # Start Fresh
+        self.browser.clean_browser()
+
+        # Exercise the NoUrl behavior
+        self.assertRaises(NoUrlOpen, self.browser.get_resource, 'a', './')
+
+        # Do some setup
+        self.browser.open_url(BASE_URL + "/html_test.html")
+        outdir = 'tmp'  # temporary folder for storing resources
+        if not os.path.isdir(outdir):
+            os.mkdir(outdir)
+        msg_save_failed = 'get_resource failed to correctly save resources'
+
+        # Bad selector
+        msg = 'Failed to handle no elements selected'
+        cnt = self.browser.get_resource('#nothing', outdir)
+        self.assertEqual(cnt, 0, msg)
+
+        # Single resource
+        msg = 'Failed to load a basic resource'
+        cnt = self.browser.get_resource('#python-logo', outdir)
+        self.assertEqual(cnt, 1, msg)
+        fpath = os.path.join(outdir, 'python-logo.png')
+        self.assertTrue(os.path.isfile(fpath), msg_save_failed)
+
+        # Multiple resources
+        msg = 'Failed to handle multiple resources'
+        cnt = self.browser.get_resource('img', outdir)
+        self.assertEqual(cnt, 2, msg)
+        fpath = os.path.join(outdir, 'empty.png')
+        self.assertTrue(os.path.isfile(fpath), msg_save_failed)
+
+        # Alternate source_attribute
+        msg = 'Failed to load resource with alternate src attribute'
+        cnt = self.browser.get_resource('#python-powered-logo', outdir, 'href')
+        self.assertEqual(cnt, 1, msg)
+        fpath = os.path.join(outdir, 'python-powered-w-70x28.png')
+        self.assertTrue(os.path.isfile(fpath), msg_save_failed)
+
+        # Bad alternate source attribute
+        msg = 'Failed to handle bad alternate source attribute'
+        cnt = self.browser.get_resource('#python-logo', outdir, 'bad-attr')
+        self.assertEqual(cnt, 0, msg)
+
+        # Valid resource tag, missing resource
+        msg = 'Failed to handle missing resource'
+        cnt = self.browser.get_resource('#missing-resource', outdir)
+        self.assertEqual(cnt, 0, msg)
+
+        # Cleanup test tmp folder
+        try:
+            for f in os.listdir(outdir):
+                os.remove(os.path.join(outdir, f))
+            os.rmdir(outdir)
+        except OSError:
+            pass
 
     def tearDown(self):
         self.browser.session.close()
