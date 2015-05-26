@@ -3,10 +3,12 @@
 It represent a simple browser object with all methods
 """
 
-import requests
 import re
 import os
+
 import lxml.html as lh
+import requests
+
 from lxml.cssselect import CSSSelector
 from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound, NoFormWaiting, HistoryIsNone
 from octbrowser.history.base import BaseHistory
@@ -366,7 +368,7 @@ class Browser(object):
             raise NoUrlOpen()
         return self._html.cssselect(selector)
 
-    def get_ressource(self, selector, output_dir, source_attribute='src'):
+    def get_resource(self, selector, output_dir, source_attribute='src'):
         """Get a specified ressource and write it to the output dir
 
         Raise:
@@ -378,35 +380,36 @@ class Browser(object):
         :type output_dir: str
         :param source_attribute: the attribute to retreive the url needed for downloading the ressource
         :type source_attribute: str
-        :return: True if ressources as been correctly downled, False in other case
+        :return: number or resources successfully saved (zero for failure)
         """
         if self._html is None:
             raise NoUrlOpen()
         elements = self._html.cssselect(selector)
 
+        cnt = 0
         if not elements or len(elements) == 0:
-            return False
+            return cnt
 
         for elem in elements:
             src = elem.get(source_attribute)
             if not src:
                 continue
-            response = requests.get(src, stream=True)
 
+            response = requests.get(src, stream=True)
             if not response.ok:
                 continue
 
-            filename = re.search('((.*)\.[a-zA-Z]+)', response.url).group(0)
+            # Save resource to file
+            filename = os.path.basename(response.url)
             path = os.path.join(output_dir, filename)
             with open(path, 'wb') as f:
                 for block in response.iter_content(1024):
-
                     if not block:
                         break
-
                     f.write(block)
+                cnt += 1
 
-        return True
+        return cnt
 
     @staticmethod
     def open_in_browser(response):
