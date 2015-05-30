@@ -2,7 +2,7 @@ import os
 import unittest
 from collections import deque
 import threading
-import urllib
+from six.moves import urllib
 try:
     # Python 2
     import SocketServer as socketserver
@@ -212,7 +212,7 @@ class TestBrowserFunctions(unittest.TestCase):
         self.assertIsNone(self.browser._url)
         self.assertIsNone(self.browser._html)
         self.assertIsNone(self.browser._response)
-        r = urllib.urlopen(BASE_URL + '/html_test.html')
+        r = urllib.request.urlopen(BASE_URL + '/html_test.html')
         r_html = self.browser._process_response(r)
         self.assertEqual(r.url, self.browser._url)
         self.assertIsNotNone(self.browser._html)
