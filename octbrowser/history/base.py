@@ -21,7 +21,7 @@ class BaseHistory(object):
         :type item: requests.Response
         :return: None
         """
-        raise NotImplemented("Append item must be implemented")
+        raise NotImplementedError("Append item must be implemented")
 
     def forward(self):
         """Return the next element in comparision with the current element
@@ -31,7 +31,7 @@ class BaseHistory(object):
         :rtype: requests.Response
         :raises: EndOfHistory
         """
-        raise NotImplemented("Forward method must be implemented")
+        raise NotImplementedError("Forward method must be implemented")
 
     def back(self):
         """Return the previous element in comparision with the current element
@@ -41,7 +41,7 @@ class BaseHistory(object):
         :rtype: requests.Response
         :raises: NoPreviousPage
         """
-        raise NotImplemented("Back method must be implemented")
+        raise NotImplementedError("Back method must be implemented")
 
     def get_current_item(self):
         """Simply return the current item

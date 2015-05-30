@@ -3,12 +3,15 @@
 It represent a simple browser object with all methods
 """
 
-import requests
 import re
 import os
+
 import lxml.html as lh
+import requests
+
 from lxml.cssselect import CSSSelector
 from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound, NoFormWaiting, HistoryIsNone
+from octbrowser.history.base import BaseHistory
 
 
 class Browser(object):
@@ -18,18 +21,35 @@ class Browser(object):
 
     :param session: The session object to use. If set to None will use requests.Session
     :param base_url: The base url for the website, will append it for every link without a full url
+    :param history: The history object to use. If set to None no history will be stored.
+    :type history: octbrowser.history.base.BaseHistory instance
     """
 
     def __init__(self, session=None, base_url='', history=None):
         self._sess_bak = session
+        if history is not None:
+            assert isinstance(history, BaseHistory)
         self._history = history
-        self._html = None
-        self._url = None
-        self._back_index = False
+        self._response = None
         self._base_url = base_url
         self.form = None
         self.form_data = None
         self.session = session or requests.Session()
+
+    def clean_browser(self):
+        """Clears browser history, session, current page, and form state
+
+        self._base_url is unmodified
+        :return: None
+        """
+        self.clean_session()
+        self._response = None
+        self.form = None
+        self.form_data = None
+        try:
+            self.clear_history()
+        except HistoryIsNone:
+            pass
 
     def add_header(self, name, value):
         """Allow you to add custom header, one by one.
@@ -51,10 +71,7 @@ class Browser(object):
         :type key: mixed
         :return: None
         """
-        try:
-            self.session.headers.pop(key, None)
-        except KeyError:
-            pass
+        self.session.headers.pop(key, None)
 
     def set_headers(self, headers):
         """Setter for headers property
@@ -64,7 +81,7 @@ class Browser(object):
         :return: None
         """
         self.session.headers.clear()
-        self.session.update(headers)
+        self.session.headers.update(headers)
 
     def clean_session(self):
         """This function is called by the core of multi-mechanize. It cleans the session for avoiding cache or cookies
@@ -76,6 +93,28 @@ class Browser(object):
         self.session = self._sess_bak or requests.Session()
 
     @property
+    def _url(self):
+        """Url of the current page or None if there isn't one
+
+        :return: url of current page or None if there isn't one
+        """
+        try:
+            return self._response.url
+        except AttributeError:
+            return None
+
+    @property
+    def _html(self):
+        """Parsed html of the current page or None if there isn't any
+
+        :return: html of current page or None if there isn't any
+        """
+        try:
+            return self._response.html
+        except AttributeError:
+            return None
+
+    @property
     def _form_waiting(self):
         """Check if a form is actually on hold or not
 
@@ -85,8 +124,8 @@ class Browser(object):
             return True
         return False
 
-    def _parse_html(self, response):
-        """Parse the response object and set the html property to response and to itself
+    def _process_response(self, response):
+        """Update the response object with parsed html and browser properties
 
         Html property is a lxml.Html object, needed for parsing the content, getting elements like form, etc...
         If you want the raw html, you can use both::
@@ -97,8 +136,8 @@ class Browser(object):
 
             lxml.html.tostring(response.html)
 
-        :param response: Request or Urllib Response object
-        :return: the upadted Response object
+        :param response: requests.Response or urllib.Response object
+        :return: the updated Response object
         """
         if not hasattr(response, 'html'):
             try:
@@ -109,7 +148,7 @@ class Browser(object):
             tree = lh.fromstring(html)
             tree.make_links_absolute(base_url=self._base_url)
             response.html = tree
-            self._html = tree
+        self._response = response
         return response
 
     def get_form(self, selector=None, nr=0, at_base=False):
@@ -150,7 +189,10 @@ class Browser(object):
         """Get the available values of all select and select multiple fields in form
 
         :return: a dict containing all values for each fields
+        :raises: NoFormWaiting
         """
+        if not self._form_waiting:
+            raise NoFormWaiting('No form waiting')
         data = {}
         for i in self.form.inputs:
             if isinstance(i, lh.SelectElement):
@@ -170,10 +212,9 @@ class Browser(object):
 
         self.form.fields = self.form_data
         r = lh.submit_form(self.form, open_http=self._open_session_http)
-        resp = self._parse_html(r)
+        resp = self._process_response(r)
         if self._history is not None:
             self._history.append_item(resp)
-        self._url = resp.url
         self.form_data = None
         self.form = None
         return resp
@@ -193,16 +234,13 @@ class Browser(object):
 
         :param url: The url to access
         :param data: Data to send. If data is set, the browser will make a POST request
-        :param back: tell if we actually accessing a page of the history
         :return: The Response object from requests call
         """
         if data:
             response = self.session.post(url, data, **kwargs)
-            self._url = url
         else:
             response = self.session.get(url, **kwargs)
-            self._url = url
-        response = self._parse_html(response)
+        response = self._process_response(response)
         if self._history is not None:
             self._history.append_item(response)
         response.connection.close()
@@ -213,28 +251,36 @@ class Browser(object):
 
         :return: the Response object
         :rtype: requests.Response
-        :raises: NoPreviousPage
+        :raises: NoPreviousPage, HistoryIsNone
         """
         if self._history is None:
             raise HistoryIsNone("You must set history if you need to use historic methods")
         response = self._history.back()
-        parsed_response = self._parse_html(response)
-        self._url = parsed_response.url
-        return parsed_response
+        return self._process_response(response)
 
     def forward(self):
         """Go to the next url in the history
 
         :return: the Response object
         :rtype: requests.Response
-        :raises: EndOfHistory
+        :raises: EndOfHistory, HistoryIsNone
         """
         if self._history is None:
             raise HistoryIsNone("You must set history if you need to use historic methods")
         response = self._history.forward()
-        parsed_response = self._parse_html(response)
-        self._url = parsed_response.url
-        return parsed_response
+        return self._process_response(response)
+
+    def refresh(self):
+        """Refresh the current page by resending the request
+
+        :return: the Response object
+        :rtype: requests.Response
+        :raises: NoUrlOpen
+        """
+        if self._response is None:
+            raise NoUrlOpen("Can't perform refresh. No url open")
+        response = self.session.send(self._response.request)
+        return self._process_response(response)
 
     def clear_history(self):
         """Re initialise the history
@@ -249,6 +295,7 @@ class Browser(object):
 
         :return: the history list
         :rtype: list
+        :raises: HistoryIsNone
         """
         if self._history is None:
             raise HistoryIsNone("You must set history if you need to use historic methods")
@@ -277,17 +324,15 @@ class Browser(object):
         resp = None
 
         if self._html is None:
-            raise Exception('No url open')
+            raise NoUrlOpen
 
         for e in sel(self._html):
             if url_regex:
                 r = re.compile(url_regex)
                 if r.match(e.get('href')) or r.match(e.xpath('string()')):
-                    resp = self.open_url(e.get('href'))
-                    return resp
+                    return self.open_url(e.get('href'))
             else:
-                resp = self.open_url(e.get('href'))
-                return resp
+                return self.open_url(e.get('href'))
 
         if resp is None:
             raise LinkNotFound('Link not found')
@@ -303,6 +348,8 @@ class Browser(object):
         :return: a string containing the element, if multiples elements are find, it will concat them
         :rtype: str
         """
+        if self._html is None:
+            raise NoUrlOpen()
         elements = self._html.cssselect(selector)
         ret = ""
         for elem in elements:
@@ -317,9 +364,11 @@ class Browser(object):
         :return: a list of lxml.html.HtmlElement of finded elements
         :rtype: list
         """
+        if self._html is None:
+            raise NoUrlOpen()
         return self._html.cssselect(selector)
 
-    def get_ressource(self, selector, output_dir, source_attribute='src'):
+    def get_resource(self, selector, output_dir, source_attribute='src'):
         """Get a specified ressource and write it to the output dir
 
         Raise:
@@ -331,33 +380,36 @@ class Browser(object):
         :type output_dir: str
         :param source_attribute: the attribute to retreive the url needed for downloading the ressource
         :type source_attribute: str
-        :return: True if ressources as been correctly downled, False in other case
+        :return: number or resources successfully saved (zero for failure)
         """
+        if self._html is None:
+            raise NoUrlOpen()
         elements = self._html.cssselect(selector)
 
+        cnt = 0
         if not elements or len(elements) == 0:
-            return False
+            return cnt
 
         for elem in elements:
             src = elem.get(source_attribute)
             if not src:
                 continue
-            response = requests.get(src, stream=True)
 
+            response = requests.get(src, stream=True)
             if not response.ok:
                 continue
 
-            filename = re.search('((.*)\.[a-zA-Z]+)', response.url).group(0)
+            # Save resource to file
+            filename = os.path.basename(response.url)
             path = os.path.join(output_dir, filename)
             with open(path, 'wb') as f:
                 for block in response.iter_content(1024):
-
                     if not block:
                         break
-
                     f.write(block)
+                cnt += 1
 
-        return True
+        return cnt
 
     @staticmethod
     def open_in_browser(response):
