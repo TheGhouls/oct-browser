@@ -21,8 +21,11 @@ class Browser(object):
     or testing website with python scripts
 
     :param session: The session object to use. If set to None will use requests.Session
+    :type session: requests.Session
     :param base_url: The base url for the website, will append it for every link without a full url
+    :type base_url: str
     :param history: The history object to use. If set to None no history will be stored.
+    :type history: octbrowser.history.BaseHistory
     :type history: octbrowser.history.base.BaseHistory instance
     """
 
@@ -163,8 +166,11 @@ class Browser(object):
             * oct.core.exceptions.NoUrlOpen
 
         :param selector: A css-like selector for finding the form
+        :type selector: str
         :param nr: the index of the form, if selector is set to None, it will search on the hole page
+        :type nr: int
         :param at_base: must be set to true in case of form action is on the base_url page
+        :type at_base: bool
         :return: None
         """
         if self._html is None:
@@ -227,8 +233,11 @@ class Browser(object):
         """Custom method for form submission, send to lxml submit form method
 
         :param method: the method of the form (POST, GET, PUT, DELETE)
-        :param url: the url of the action of the form
+        :type method: str
+        :param url: the url of the action of the form7
+        :type url: str
         :param values: the values of the form
+        :type values: dict
         :return: Response object from requests.request method
         """
         return self.session.request(method, url, None, values)
@@ -237,7 +246,9 @@ class Browser(object):
         """Open the given url
 
         :param url: The url to access
+        :type url: str
         :param data: Data to send. If data is set, the browser will make a POST request
+        :type data: dict
         :return: The Response object from requests call
         """
         if data:
@@ -321,7 +332,9 @@ class Browser(object):
             oct.core.exceptions.LinkNotFound
 
         :param selector: a string representing a css selector
+        :type selector: str
         :param url_regex: regex for finding the url, can represent the href attribute or the link content
+        :type url_regex: str
         :return: Response object
         """
         sel = CSSSelector(selector)
@@ -420,7 +433,8 @@ class Browser(object):
         """Provide a simple interface for `lxml.html.open_in_browser` function.
         Be careful, use this function only for debug purpose
 
-        :param response:
+        :param response: the response object to open in the browser
+        :type response: requests.Response
         :return:
         """
         lh.open_in_browser(response.html)
