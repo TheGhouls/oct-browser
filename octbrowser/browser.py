@@ -29,6 +29,7 @@ class Browser(object):
     def __init__(self, session=None, base_url='', **kwargs):
         self._sess_bak = session
         self._history = kwargs.get('history', CachedHistory())
+
         # check history class
         if self._history is not None:
             assert isinstance(self._history, BaseHistory)
