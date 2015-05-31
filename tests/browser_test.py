@@ -22,7 +22,10 @@ from octbrowser import __version__ as ob_version
 from octbrowser.browser import Browser
 from octbrowser.history.cached import CachedHistory
 from octbrowser.history.base import BaseHistory
-from octbrowser.exceptions import EndOfHistory, NoPreviousPage, HistoryIsNone, HistoryIsEmpty, NoFormWaiting, FormNotFoundException, NoUrlOpen, LinkNotFound
+from octbrowser.exceptions import (
+    EndOfHistory, NoPreviousPage, HistoryIsNone, HistoryIsEmpty, NoFormWaiting,
+    FormNotFoundException, NoUrlOpen, LinkNotFound
+)
 
 PORT = 8081
 BASE_URL = "http://localhost:{}".format(PORT)
