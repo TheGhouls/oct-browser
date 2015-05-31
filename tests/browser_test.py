@@ -65,7 +65,7 @@ def tearDownModule():
 class TestBrowserFunctions(unittest.TestCase):
 
     def setUp(self):
-        self.browser = Browser(base_url=BASE_URL)
+        self.browser = Browser(base_url=BASE_URL, history=None)
 
     def test_headers(self):
         """Test the browser header functions

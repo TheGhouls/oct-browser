@@ -12,6 +12,7 @@ import requests
 from lxml.cssselect import CSSSelector
 from octbrowser.exceptions import FormNotFoundException, NoUrlOpen, LinkNotFound, NoFormWaiting, HistoryIsNone
 from octbrowser.history.base import BaseHistory
+from octbrowser.history.cached import CachedHistory
 
 
 class Browser(object):
@@ -25,11 +26,13 @@ class Browser(object):
     :type history: octbrowser.history.base.BaseHistory instance
     """
 
-    def __init__(self, session=None, base_url='', history=None):
+    def __init__(self, session=None, base_url='', **kwargs):
         self._sess_bak = session
-        if history is not None:
-            assert isinstance(history, BaseHistory)
-        self._history = history
+        self._history = kwargs.get('history', CachedHistory())
+        # check history class
+        if self._history is not None:
+            assert isinstance(self._history, BaseHistory)
+
         self._response = None
         self._base_url = base_url
         self.form = None
