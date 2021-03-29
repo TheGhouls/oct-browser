@@ -5,7 +5,7 @@ Jinja2==2.7.3
 lxml==3.4.2
 MarkupSafe==0.23
 oct==0.4
-Pygments==2.0.2
+Pygments==2.7.4
 requests==2.5.1
 six==1.9.0
 tinycss==0.3
